@@ -1,8 +1,9 @@
 /* Admin: GET / PUT {blocked:[spaceIds]} : spaces staff have taken out of service */
-const { route, send, HttpError } = require('../../lib/http');
-const { requireAdmin } = require('../../lib/auth');
-const { isSpace } = require('../../lib/validate');
-const store = require('../../lib/store');
+const path = require('path');
+const { route, send, HttpError } = require(path.join(__dirname, '../../lib/http'));
+const { requireAdmin } = require(path.join(__dirname, '../../lib/auth'));
+const { isSpace } = require(path.join(__dirname, '../../lib/validate'));
+const store = require(path.join(__dirname, '../../lib/store'));
 module.exports = route(['GET', 'PUT'], async (req, res) => {
   requireAdmin(req);
   if (req.method === 'PUT') {
