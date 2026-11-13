@@ -1,0 +1,363 @@
+/* =========================================================
+   Lumen Yard · Tenant Portal  —  styles.css
+   Dark = default. Light = <html data-theme="light">
+   ========================================================= */
+
+/* 1. THEME TOKENS ---------------------------------------- */
+:root {
+  color-scheme: dark;
+  --r: 16px;
+
+  /* Brand */
+  --accent: #facc15;            /* "Yours" / primary buttons */
+  --accent-stroke: #eab308;
+  --accent-text: #facc15;       /* accent used as TEXT */
+  --ink: #0b132b;               /* text that sits on yellow */
+
+  /* Text */
+  --text: #f8fafc;
+  --muted: #b8c4d6;
+
+  /* Surfaces */
+  --glass: rgba(15, 23, 42, 0.5);        /* booking panel */
+  --glass-soft: rgba(15, 23, 42, 0.62);  /* side cards */
+  --glass-chat: rgba(15, 23, 42, 0.6);   /* chatbot */
+  --surface: #121c3d;                    /* modals: solid for legibility */
+  --raise: rgba(255, 255, 255, 0.08);
+  --line: rgba(255, 255, 255, 0.2);
+
+  /* Form fields */
+  --field-bg: #0b132b;
+  --field-text: #ffffff;
+  --field-ph: #8fa0b8;
+  --field-line: rgba(255, 255, 255, 0.35);
+
+  /* Desk states */
+  --free-fill: rgba(16, 185, 129, 0.30);
+  --free-stroke: #34d399;
+  --free-glow: rgba(52, 211, 153, 0.75);
+  --free-text: #d1fae5;
+  --occ-fill: rgba(100, 116, 139, 0.32);
+  --occ-stroke: rgba(148, 163, 184, 0.45);
+  --occ-text: #94a3b8;
+
+  /* Tower graphic */
+  --glass-a: rgba(125, 211, 252, 0.55);
+  --glass-b: rgba(30, 64, 120, 0.85);
+  --glass-c: rgba(11, 19, 43, 0.95);
+  --bldg-frame: rgba(255, 255, 255, 0.28);
+  --bldg-side: rgba(148, 163, 184, 0.3);
+
+  /* Artwork lives in /images. Swap bg-night.svg / bg-day.svg for your own AI-generated images here. */
+  --bg-base: #0b132b;
+  --bg-overlay: rgba(11, 19, 43, 0.3);
+  --shadow: 0 10px 30px rgba(0, 0, 0, .18);
+  --bg-wash: linear-gradient(var(--bg-overlay), var(--bg-overlay));
+  --bg-photo: url('images/bg-night.svg');
+}
+
+/* LIGHT: soft day skyline illustration, charcoal ink, yellow accent */
+[data-theme="light"] {
+  color-scheme: light;
+  --accent-text: #8a5a00;       /* yellow is unreadable as text on white */
+  --text: #14181f;
+  --muted: #566070;
+
+  --glass: rgba(255, 255, 255, 0.9);
+  --glass-soft: #ffffff;
+  --glass-chat: rgba(255, 255, 255, 0.92);
+  --surface: #ffffff;
+  --raise: rgba(20, 24, 31, 0.045);
+  --line: rgba(20, 24, 31, 0.13);
+  --shadow: 0 1px 2px rgba(20, 24, 31, .06), 0 10px 30px rgba(20, 24, 31, .08);
+
+  --field-bg: #ffffff;
+  --field-text: #14181f;
+  --field-ph: #6b7686;
+  --field-line: rgba(20, 24, 31, 0.4);
+
+  --free-fill: rgba(16, 185, 129, 0.2);
+  --free-stroke: #059669;
+  --free-glow: rgba(5, 150, 105, 0.45);
+  --free-text: #065f46;
+  --occ-fill: #e5e9ef;
+  --occ-stroke: #c3cad5;
+  --occ-text: #6b7686;
+
+  --glass-a: #bfdbfe;
+  --glass-b: #60a5fa;
+  --glass-c: #1e3a8a;
+  --bldg-frame: rgba(255, 255, 255, 0.7);
+  --bldg-side: rgba(100, 116, 139, 0.35);
+
+  --bg-base: #f7f5ee;
+  --bg-photo: url('images/bg-day.svg');
+  --bg-wash: linear-gradient(rgba(255,255,255,0), rgba(255,255,255,0));
+}
+
+/* 2. PAGE + THEMED BACKGROUND -------------------------- */
+html, body { min-height: 100%; }
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  color: var(--text);
+  background: var(--bg-base);
+}
+/* Fixed photo layer: overlay on top, photo below. Cross-fades on toggle. */
+body::before, body::after {
+  content: ""; position: fixed; inset: 0; z-index: -2;
+  background-size: cover; background-position: center bottom; background-repeat: no-repeat;
+}
+body::before {                       /* photo (changes with theme) */
+  background-image: var(--bg-photo);
+  transition: opacity .5s ease;
+}
+body::after {                        /* soft gradient overlay */
+  z-index: -1;
+  background: var(--bg-wash);
+}
+body.swap::before { opacity: 0; }    /* JS sets this briefly during toggle */
+
+.fh { font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; font-weight: 800; letter-spacing: -.025em; }
+.muted { color: var(--muted); }
+.accent { color: var(--accent-text); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* 3. GLASS SURFACES --------------------------------------- */
+.card {
+  background: var(--glass-soft);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+/* Booking panel ("8th Floor Plan") */
+.glass-panel {
+  background: var(--glass);              /* dark: rgba(15,23,42,.5) */
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+}
+.raise {
+  background: var(--raise); border: 1px solid var(--line);
+  border-radius: calc(var(--r) * .7); color: var(--text);
+}
+.chip {
+  display: inline-flex; align-items: center; gap: .5rem;
+  background: var(--glass-soft); border: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border-radius: 999px; color: var(--text); font-weight: 600;
+}
+.chip svg { color: var(--accent-text); }
+.ico { width: 1.1em; height: 1.1em; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* 4. BUTTONS + THEME TOGGLE ------------------------------- */
+.btn {
+  background: var(--accent); color: var(--ink);
+  border: 0; border-radius: calc(var(--r) * .7); font-weight: 700;
+  cursor: pointer; transition: filter .2s, transform .2s;
+}
+.btn:hover:not(:disabled) { filter: brightness(1.08); }
+.btn:disabled { background: var(--raise); color: var(--muted); border: 1px solid var(--line); cursor: not-allowed; }
+.bb { color: var(--muted); transition: background .2s, color .2s; }
+.bb.btn { color: var(--ink); }
+
+.theme-toggle {
+  display: inline-flex; align-items: center; gap: .5rem;
+  padding: .5rem .9rem; border-radius: 999px; cursor: pointer;
+  background: var(--glass-soft); color: var(--text); border: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  font-weight: 600; font-size: .875rem; transition: border-color .2s;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+.theme-toggle svg { color: var(--accent-text); }
+
+/* 5. FORMS (high contrast) -------------------------------- */
+label, legend { color: var(--text); font-weight: 600; }
+.field {
+  background: var(--field-bg); color: var(--field-text);
+  border: 1.5px solid var(--field-line); border-radius: calc(var(--r) * .6);
+  caret-color: var(--accent); font-size: 1rem;
+}
+.field::placeholder { color: var(--field-ph); }
+.field:focus { outline: 3px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.field:-webkit-autofill { -webkit-text-fill-color: var(--field-text); box-shadow: 0 0 0 40px var(--field-bg) inset; }
+.sl { color: var(--text); cursor: pointer; font-weight: 600; }
+.sl.on { background: var(--accent); color: var(--ink); border-color: var(--accent-stroke); }
+.err-text { color: #fb7185; font-weight: 600; }
+[data-theme="light"] .err-text { color: #be123c; }
+
+/* 6. MODALS ---------------------------------------------- */
+.scrim { background: rgba(2, 6, 23, .65); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.panel {
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--line); border-radius: var(--r);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .45);
+}
+.panel p, .panel li, .panel span { color: inherit; }
+.panel .muted { color: var(--muted); }
+.panel .accent { color: var(--accent-text); }
+.panel .btn { color: var(--ink); }
+.icon-btn { color: var(--muted); padding: .35rem; border-radius: 8px; cursor: pointer; background: transparent; border: 0; }
+.icon-btn:hover { color: var(--text); background: var(--raise); }
+.pop { animation: pop .22s ease-out; }
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* Status badges */
+.badge { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .75rem; border-radius: 999px; font-size: .8rem; font-weight: 700; }
+.badge-free { background: var(--free-fill); border: 1px solid var(--free-stroke); color: var(--free-text); }
+.badge-occ  { background: var(--occ-fill);  border: 1px solid var(--occ-stroke);  color: var(--occ-text); }
+.badge-sel  { background: var(--accent); color: var(--ink); }
+
+/* 7. CHATBOT (frosted when open) -------------------------- */
+#chat {
+  background: var(--glass-chat);
+  -webkit-backdrop-filter: blur(20px) saturate(140%); backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--line); color: var(--text);
+}
+#chat .btn { color: var(--ink); }
+.dot { display: inline-block; width: 6px; height: 6px; margin-right: 3px; border-radius: 50%; background: currentColor; animation: blink 1s infinite; }
+.dot:nth-child(2) { animation-delay: .15s; } .dot:nth-child(3) { animation-delay: .3s; }
+@keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+
+/* 8. FLOOR PLAN: FREE / TAKEN / YOURS -------------------- */
+.zone { fill: rgba(255, 255, 255, .03); stroke: var(--line); stroke-dasharray: 5 5; }
+[data-theme="light"] .zone { fill: rgba(15, 23, 42, .03); }
+.u { transition: fill .15s, stroke .15s, filter .15s; cursor: pointer; outline: none; }
+.u.free {
+  fill: var(--free-fill); stroke: var(--free-stroke); stroke-width: 2;
+  filter: drop-shadow(0 0 4px var(--free-glow));
+}
+.u.free:hover, .u.free:focus-visible { fill: var(--free-stroke); fill-opacity: .55; filter: drop-shadow(0 0 8px var(--free-glow)); }
+.u.occ { fill: var(--occ-fill); stroke: var(--occ-stroke); stroke-width: 1; cursor: pointer; }
+.u.occ:hover, .u.occ:focus-visible { stroke: var(--text); }
+.u.sel {
+  fill: #facc15; stroke: #eab308; stroke-width: 3;
+  filter: drop-shadow(0 0 10px rgba(250, 204, 21, .9));
+}
+.lbl { font-weight: 700; font-size: 12px; pointer-events: none; }
+.lbl-free { fill: var(--free-text); } .lbl-occ { fill: var(--occ-text); } .lbl-sel { fill: #0b132b; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.sw-free { background: var(--free-fill); border: 2px solid var(--free-stroke); }
+.sw-occ  { background: var(--occ-fill);  border: 1px solid var(--occ-stroke); }
+.sw-sel  { background: #facc15; border: 1px solid #eab308; }
+
+/* 9. TOWER GRAPHIC --------------------------------------- */
+.tower-glass { fill: url(#glass); stroke: var(--bldg-frame); stroke-width: 1; }
+.tower-grid  { fill: url(#mull); }
+.tower-side  { fill: var(--bldg-side); stroke: var(--bldg-frame); stroke-width: .6; }
+.tower-sheen { fill: url(#sheen); pointer-events: none; }
+.band { fill: #facc15; filter: drop-shadow(0 0 5px rgba(250, 204, 21, .95)); transition: y .4s ease; }
+.tower-ground { stroke: var(--text); opacity: .25; }
+.tower-spire { stroke: var(--bldg-frame); stroke-width: 1.2; }
+
+/* 10. 3D HOVER FLIP CARDS -------------------------------- */
+.preview-card { perspective: 1000px; cursor: pointer; height: 11rem; border-radius: var(--r); }
+.preview-card-inner {
+  position: relative; width: 100%; height: 100%;
+  transition: transform .6s ease-in-out; transform-style: preserve-3d;
+}
+.preview-card:hover .preview-card-inner,
+.preview-card:focus-visible .preview-card-inner,
+.preview-card.flip .preview-card-inner { transform: rotateY(180deg); }
+.card-front, .card-back {
+  position: absolute; inset: 0;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  border-radius: var(--r); overflow: hidden;
+}
+.card-front {
+  background: var(--glass-soft); border: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; text-align: center; padding: 1rem;
+}
+.card-front .ico-lg { width: 2rem; height: 2rem; color: var(--accent-text); }
+.card-back { transform: rotateY(180deg); background-size: cover; background-position: center; border: 1px solid var(--line); }
+.card-back .cap {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 1.5rem .9rem .7rem;
+  background: linear-gradient(to top, rgba(2, 6, 23, .85), transparent);
+  color: #fff; font-weight: 700; font-size: .9rem;
+}
+
+/* 11. RESPONSIVE + MOTION -------------------------------- */
+@media (max-width: 640px) { .preview-card { height: 9.5rem; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* 12. CHAT TYPEAHEAD ------------------------------------ */
+#sug { max-height: 11rem; overflow-y: auto; margin: 0 .75rem .5rem; padding: .25rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: calc(var(--r) * .7); }
+.sug-item { display: block; width: 100%; text-align: left; padding: .5rem .7rem; font-size: .85rem;
+  color: var(--text); background: transparent; border: 0; border-radius: 8px; cursor: pointer; }
+.sug-item b { color: var(--accent-text); font-weight: 800; }
+.sug-item:hover, .sug-item.active { background: var(--raise); }
+.sug-item.active { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sug-empty { padding: .6rem .7rem; font-size: .85rem; color: var(--muted); }
+
+/* 13. SEAT HOVER: lift + flip-in preview card ------------- */
+.u { transform-box: fill-box; transform-origin: center; }
+.u:hover, .u:focus-visible { transform: scale(1.08); }
+.tip { position: fixed; z-index: 60; width: 230px; pointer-events: none; perspective: 700px; }
+.tip-card { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: var(--r);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .35); overflow: hidden; }
+.tip-photo { height: 104px; background-size: cover; background-position: center; display: flex; align-items: flex-start; justify-content: flex-end; padding: .5rem; }
+.tip-in .tip-card { animation: tipFlip .35s ease-out; transform-origin: 50% 100%; }
+@keyframes tipFlip { from { opacity: 0; transform: rotateX(-70deg) translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* 14. PREFERENCE CHIPS + DETAIL PAGE ---------------------- */
+.opt { position: relative; display: inline-flex; cursor: pointer; }
+.opt input { position: absolute; opacity: 0; pointer-events: none; }
+.opt span { display: inline-flex; align-items: center; gap: .4rem; padding: .5rem .85rem; border-radius: 999px;
+  border: 1.5px solid var(--line); background: var(--raise); color: var(--text); font-weight: 600; font-size: .875rem; transition: background .15s, border-color .15s; }
+.opt:hover span { border-color: var(--accent-stroke); }
+.opt input:checked + span { background: var(--accent); color: var(--ink); border-color: var(--accent-stroke); }
+.opt input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+.hero-photo { min-height: 18rem; background-size: cover; background-position: center; border-radius: var(--r); position: relative; overflow: hidden; border: 1px solid var(--line); }
+.hero-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(2, 6, 23, .55), transparent 55%); }
+.hero-photo .badge { position: absolute; top: 1rem; left: 1rem; z-index: 1; }
+.back-link { display: inline-flex; align-items: center; gap: .4rem; font-weight: 700; color: var(--text); text-decoration: none; padding: .5rem .9rem; border-radius: 999px; background: var(--glass-soft); border: 1px solid var(--line); }
+.back-link:hover { border-color: var(--accent); }
+a.sib { display: inline-block; padding: .4rem .8rem; border-radius: 999px; font-weight: 700; font-size: .85rem; color: var(--text); background: var(--raise); border: 1px solid var(--line); text-decoration: none; }
+a.sib:hover { border-color: var(--free-stroke); color: var(--free-text); }
+
+.tip.hidden, #sug.hidden { display: none; }
+
+/* 15. MOBILE: keep seats big enough to tap ---------------- */
+.plan-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; padding-bottom: .25rem; }
+@media (max-width: 640px) { #plan { min-width: 940px; } }
+@media (hover: none) { .tip { pointer-events: auto; } .u:hover { transform: none; } }
+
+/* 16. MOBILE LIST VIEW ------------------------------------ */
+.only-mobile { display: none !important; }
+.list-only { display: none; }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--raise); border: 1px solid var(--line); }
+.seg button { padding: .5rem 1.1rem; border-radius: 999px; font-weight: 700; font-size: .875rem; color: var(--muted); background: transparent; border: 0; cursor: pointer; }
+.seg button.on { background: var(--accent); color: var(--ink); }
+.list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: .5rem; }
+.list-grid.list-big { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.seat-chip { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 52px; padding: .45rem;
+  border-radius: 12px; border: 2px solid; font-weight: 700; font-size: .9rem; text-decoration: none; }
+.seat-chip small { font-weight: 600; font-size: .72rem; opacity: .9; }
+.seat-chip.free { background: var(--free-fill); border-color: var(--free-stroke); color: var(--free-text); }
+.seat-chip.occ { background: var(--occ-fill); border-color: var(--occ-stroke); color: var(--occ-text); }
+.seat-chip.sel { background: #facc15; border-color: #eab308; color: #0b132b; }
+@media (max-width: 640px) {
+  .seg.only-mobile { display: inline-flex !important; }
+  p.only-mobile { display: block !important; }
+  .view-list .plan-only { display: none !important; }
+  .view-list .list-only { display: block; }
+}
+
+/* 17. THEME TOGGLE ICON (sun <-> moon morph is animated in data.js) */
+.theme-toggle .ti { display: inline-block; width: 22px; height: 22px; flex: none; }
+.theme-toggle .ti svg { width: 22px; height: 22px; display: block; overflow: visible; }
+.theme-toggle:active .ti { transform: scale(.92); }
+
+/* Desk filters, Power Hour */
+.zbtn { border:1px solid var(--line); border-radius:999px; padding:.35rem .9rem; font-size:.8rem; font-weight:600; background:transparent; color:var(--muted); cursor:pointer; transition:.15s; }
+.zbtn:hover { color:var(--text); border-color:var(--muted); }
+.zbtn.on { background:var(--accent); border-color:var(--accent); color:var(--ink, #fff); }
+.u.dim { opacity:.22; }
+#plan.f-quiet .u:not(.dim).free { fill:rgba(96,165,250,.3) !important; stroke:#60a5fa !important; }
+#plan.f-social .u:not(.dim).free { fill:rgba(251,146,60,.3) !important; stroke:#fb923c !important; }
+#plan.f-sun .u:not(.dim).free { fill:rgba(250,204,21,.32) !important; stroke:#facc15 !important; }
+#plan.f-all .u.deal { stroke:var(--accent) !important; stroke-dasharray:3 2; stroke-width:2; }
