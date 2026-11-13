@@ -159,7 +159,7 @@ function renderList() {
     const big = k === 'room' || k === 'event';
     const chips = shown.map(u => {
       const st = u.mine ? 'sel' : u.free ? 'free' : 'occ', txt = u.mine ? 'Yours' : u.free ? 'Free' : 'Taken';
-      return `<a class="seat-chip ${st}" href="space.html?id=${encodeURIComponent(u.id)}" aria-label="${u.label}, ${d.kinds[k][0]}, ${txt}">${u.label}${big ? `<small>${txt}</small>` : ''}</a>`;
+      return `<a class="seat-chip ${st}" href="space.html?id=${encodeURIComponent(u.id)}" aria-label="${u.label}, ${d.kinds[k][0]}, ${d.kinds[k][1]}, ${txt}">${u.label}<small>${d.kinds[k][1]}${big ? ' · ' + txt : ''}</small></a>`;
     }).join('') || '<p class="muted text-sm">Nothing free right now.</p>';
     return `<h4 class="fh text-2xl mt-5 mb-2">${name} <span class="text-sm muted font-semibold">· ${free} free</span></h4><div class="list-grid ${big ? 'list-big' : ''}">${chips}</div>`;
   }).join('');
@@ -207,7 +207,7 @@ function showTip(el) {
   const u = items.find(x => x.id === el.dataset.id), d = B[brand]; if (!u) return;
   const k = d.kinds[u.kind], st = u.mine ? ['badge-sel', 'check', 'Yours'] : u.free ? ['badge-free', 'check', 'Free'] : ['badge-occ', 'lock', 'Taken'];
   tip.innerHTML = `<div class="tip-card"><div class="tip-photo" style="background-image:url('${KIND_PHOTO[u.kind]}')"><span class="badge ${st[0]}">${ic(st[1])}${st[2]}</span></div>
-    <div class="p-3"><p class="fh text-2xl leading-none">${u.label}</p><p class="text-xs muted mt-1">${k[0]} · ${d.floor}F</p>${u.kind === 'flex' || u.kind === 'priv' ? `<p class="text-xs muted mt-1">${ZONE[u.zone]} · ${SUN[u.sun]}</p>` : ''}${u.free && u.deal ? `<p class="text-xs font-bold accent mt-1">Power Hour: ${POWER.pct}% off</p>` : ''}
+    <div class="p-3"><p class="fh text-2xl leading-none">${u.label}</p><p class="text-xs muted mt-1">${k[0]} · ${d.floor}F</p><p class="text-sm font-bold accent mt-1">${k[1]} · seats up to ${CAPACITY[u.kind]}</p>${u.kind === 'flex' || u.kind === 'priv' ? `<p class="text-xs muted mt-1">${ZONE[u.zone]} · ${SUN[u.sun]}</p>` : ''}${u.free && u.deal ? `<p class="text-xs font-bold accent mt-1">Power Hour: ${POWER.pct}% off</p>` : ''}
     <div class="flex gap-3 mt-2 accent">${AM[u.kind].slice(0, 4).map(a => ic(a[0])).join('')}</div>
     <p class="text-xs font-semibold mt-2">${touch.matches ? 'Tap again to open' : (u.free || u.mine ? 'Click to see details and book' : 'Click to see details')} →</p></div></div>`;
   tip.classList.remove('hidden', 'tip-in'); void tip.offsetWidth; tip.classList.add('tip-in');
