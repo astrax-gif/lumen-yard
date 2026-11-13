@@ -1,7 +1,8 @@
-/* GET /api/availability?date=YYYY-MM-DD : public. Spaces booked or blocked, plus offer settings. No personal data. */
-const { route, HttpError } = require('../lib/http');
-const { validDate } = require('../lib/validate');
-const store = require('../lib/store');
+/* GET /api/availability?date=YYYY-MM-DD : public */
+const path = require('path');
+const { route, HttpError } = require(path.join(__dirname, '../lib/http'));
+const { validDate } = require(path.join(__dirname, '../lib/validate'));
+const store = require(path.join(__dirname, '../lib/store'));
 module.exports = route(['GET'], async (req, res) => {
   const date = req.query.date || new Date().toISOString().slice(0, 10);
   if (!validDate(date)) throw new HttpError(400, 'Invalid date');
