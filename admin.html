@@ -14,11 +14,24 @@
 <!-- Login gate -->
 <div id="gate" class="max-w-sm mx-auto px-4 pt-24">
   <form id="gForm" class="card p-6 space-y-4">
-    <h1 class="fh text-3xl">Staff login</h1>
-    <p class="text-sm muted">Lumen Yard admin. Enter the staff password.</p>
-    <input id="pw" type="password" autofocus class="field w-full px-3 py-2.5" placeholder="Passcode" autocomplete="current-password" aria-label="Passcode"/>
-    <p id="gErr" class="text-sm err-text hidden" role="alert">Wrong passcode.</p>
-    <button class="btn w-full py-3">Sign in</button>
+    <div class="flex items-center gap-3 mb-2">
+      <div class="fh w-10 h-10 flex items-center justify-center btn text-lg">LY</div>
+      <div><h1 class="fh text-2xl leading-tight">Staff login</h1><p class="text-xs muted">Lumen Yard admin portal</p></div>
+    </div>
+    <label class="block text-sm font-medium">Username
+      <input id="un" type="text" autofocus class="field w-full mt-1 px-3 py-2.5" placeholder="e.g. manager" autocomplete="username" aria-label="Username"/>
+    </label>
+    <label class="block text-sm font-medium">Password
+      <input id="pw" type="password" class="field w-full mt-1 px-3 py-2.5" placeholder="Enter your password" autocomplete="current-password" aria-label="Password"/>
+    </label>
+    <p id="gErr" class="text-sm err-text hidden" role="alert"></p>
+    <button class="btn w-full py-3 font-bold">Sign in</button>
+    <div class="raise p-3 rounded-xl text-xs muted space-y-1">
+      <p class="font-semibold text-white">Demo accounts</p>
+      <p>manager / admin2026 &nbsp;·&nbsp; Full access</p>
+      <p>receptionist / reception123 &nbsp;·&nbsp; Bookings only</p>
+      <p>staff / staff2026 &nbsp;·&nbsp; View only</p>
+    </div>
     <a href="index.html" class="block text-center text-sm muted">Back to customer site</a>
   </form>
 </div>
@@ -84,7 +97,7 @@ async function load() {
 }
 $('#gForm').addEventListener('submit', async e => {
   e.preventDefault(); $('#gErr').classList.add('hidden');
-  try { await API.login($('#pw').value); $('#pw').value = ''; load(); }
+  try { await API.login({ username: $('#un').value.trim().toLowerCase(), password: $('#pw').value }); $('#un').value = ''; $('#pw').value = ''; load(); }
   catch (err) { $('#gErr').textContent = err.offline ? 'Backend not reachable.' : err.message; $('#gErr').classList.remove('hidden'); }
 });
 $('#out').addEventListener('click', () => { API.logout(); show(false); });
