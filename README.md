@@ -1,4 +1,3 @@
-[README (5).md](https://github.com/user-attachments/files/34775869/README.5.md)
 <div align="center">
 
 <img src="assets/hero.svg" alt="Lumen Yard workspace booking platform" width="100%"/>
