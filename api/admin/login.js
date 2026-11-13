@@ -1,8 +1,9 @@
-/* POST /api/admin/login {password} -> {token}. Rate limited, constant-time comparison. */
-const { route, send, limit, HttpError } = require('../../lib/http');
-const { sign, safeEqual, adminPassword } = require('../../lib/auth');
+/* POST /api/admin/login {username, password} -> {token} */
+const { route, send, limit, HttpError } = require('../lib/http');
+const { sign, findAccount } = require('../lib/auth');
 module.exports = route(['POST'], async (req, res) => {
   limit(req, 'login', 8, 60000);
-  if (!safeEqual(String(req.body.password || ''), adminPassword())) throw new HttpError(401, 'Wrong password');
-  send(res, 200, { token: sign(), expiresIn: 8 * 3600 });
+  const account = findAccount(String(req.body.username || ''), String(req.body.password || ''));
+  if (!account) throw new HttpError(401, 'Wrong username or password');
+  send(res, 200, { token: sign(8 * 3600, { role: account.role }), expiresIn: 8 * 3600 });
 });
