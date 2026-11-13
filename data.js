@@ -1,11 +1,14 @@
 /* Shared by index.html and space.html */
+const PRICE = { flex: { amt: 45, per: 'day' }, priv: { amt: 1200, per: 'month' }, room: { amt: 150, per: 'hour' }, event: { amt: 800, per: 'hour' } };
+const CAPACITY = { flex: 1, priv: 4, room: 8, event: 60 };
+const priceStr = kind => { const p = PRICE[kind]; return `AED ${p.amt}/${p.per}`; };
 const B = {
   co: { name:'Lumen Yard', mono:'LY', sub:'Halo Tower · Meridian District', floor:12, hours:'Mon–Fri 08:30–18:00 · members 24/7', addr:'Level 12, Halo Tower, Meridian District', seed:21,
     title:'Bright, flexible workspaces above the city.', text:'Open desks, private offices, meeting rooms and an event space, with staffed reception on weekdays and round-the-clock access for members.',
     chips:[['pin','Halo Tower, Meridian District'],['clock','Mon–Fri 08:30–18:00'],['key','24/7 for members']], plan:'Level 12 floor plan', botName:'Lumen Concierge',
     perks:['100+ open desks and 30 private offices','2 meeting rooms and an event space','Unlimited coffee and tea','Printing credits and member events'],
     board:[['coffee','Members’ breakfast, first Monday'],['briefcase','Workshop: setting up a small business'],['mic','Event space open for member bookings']],
-    kinds:{flex:['Open desk','Rate set by the Lumen Yard team'],priv:['Private office','Rate set by the Lumen Yard team'],room:['Meeting room','Rate set by the Lumen Yard team'],event:['Event space','Rate set by the Lumen Yard team']}, wifi:'LumenYard-Members',
+    kinds:{flex:['Open desk',priceStr('flex')],priv:['Private office',priceStr('priv')],room:['Meeting room',priceStr('room')],event:['Event space',priceStr('event')]}, wifi:'LumenYard-Members',
     photos: [
       { ico:'desk', title: 'Open Desk Area', url: 'images/flex.svg' },
       { ico:'door', title: 'Private Offices', url: 'images/priv.svg' },
@@ -91,6 +94,7 @@ const PREFS = {
 
 /* Admin controls, shared with admin.html (saved in this browser only in the demo) */
 function getSettings() { try { return JSON.parse(localStorage.getItem('lumen_yard_settings')) || {}; } catch (e) { return {}; } }
+function activePromo() { const s = getSettings(); return s.promo ? { code: s.promo, pct: s.promoPct || 0 } : null; }
 function saveSettings(s) { try { localStorage.setItem('lumen_yard_settings', JSON.stringify(s)); } catch (e) {} }
 function getBlocked() { try { return JSON.parse(localStorage.getItem('lumen_yard_blocked')) || []; } catch (e) { return []; } }
 function saveBlocked(a) { try { localStorage.setItem('lumen_yard_blocked', JSON.stringify(a)); } catch (e) {} }
