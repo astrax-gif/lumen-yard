@@ -12,7 +12,7 @@ const API = (() => {
   return {
     availability: d => call('availability' + (d ? '?date=' + d : '')),
     createBooking: b => call('bookings', { method: 'POST', body: JSON.stringify(b) }),
-    login: pw => call('admin/login', { method: 'POST', body: JSON.stringify({ password: pw }) }).then(r => { sessionStorage.setItem('ly_token', r.token); return r; }),
+    login: creds => { const body = typeof creds === 'string' ? { password: creds } : creds; return call('admin/login', { method: 'POST', body: JSON.stringify(body) }).then(r => { sessionStorage.setItem('ly_token', r.token); sessionStorage.setItem('ly_role', r.role || 'admin'); return r; }); },
     logout: () => sessionStorage.removeItem('ly_token'),
     admin: (path, o = {}) => call('admin/' + path, { ...o, headers: auth() })
   };
