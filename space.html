@@ -10,6 +10,140 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- QR code generator (pure JS, no server needed) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+/* ── Reservation page extras ─────────────────────────── */
+
+/* Price summary strip */
+#priceSummary {
+  border-radius: calc(var(--r) * .7);
+  background: var(--raise);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  transition: box-shadow .25s;
+}
+#priceSummary.active-extras {
+  box-shadow: 0 0 0 2px var(--accent);
+  border-color: var(--accent-stroke);
+}
+.price-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: .55rem 1rem; font-size: .875rem;
+  border-bottom: 1px solid var(--line);
+}
+.price-row:last-child { border-bottom: none; }
+.price-row .label { color: var(--muted); }
+.price-row .value { font-weight: 600; }
+.price-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: .75rem 1rem;
+  background: var(--raise);
+  border-top: 1px solid var(--line);
+}
+.price-total-row .label { font-weight: 700; font-size: .9rem; }
+.price-total-row .value { font-size: 1.25rem; font-weight: 800; color: var(--accent-text); font-family: 'Plus Jakarta Sans', sans-serif; }
+
+/* Extra cost badge */
+.extra-cost {
+  font-size: .7rem; font-weight: 700;
+  background: var(--raise); border: 1px solid var(--line);
+  color: var(--muted); border-radius: 999px;
+  padding: .15rem .5rem; margin-left: .4rem;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.opt input:checked ~ .extra-cost,
+.opt input:checked + span .extra-cost {
+  background: rgba(250,204,21,.18);
+  color: var(--accent-text);
+  border-color: var(--accent-stroke);
+}
+
+/* Modern section headers */
+.form-section-label {
+  font-size: .7rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: .6rem;
+}
+
+/* Stepper (number of people) */
+.stepper {
+  display: inline-flex; align-items: center; gap: 0;
+  border: 1.5px solid var(--line); border-radius: calc(var(--r) * .6);
+  overflow: hidden;
+}
+.stepper button {
+  width: 2.4rem; height: 2.4rem; border: none; background: var(--raise);
+  color: var(--text); font-size: 1.1rem; font-weight: 700;
+  cursor: pointer; transition: background .15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.stepper button:hover { background: var(--accent); color: var(--ink); }
+.stepper input {
+  width: 3rem; text-align: center; border: none; border-left: 1px solid var(--line); border-right: 1px solid var(--line);
+  background: var(--field-bg); color: var(--field-text); font-weight: 700; font-size: .95rem;
+  height: 2.4rem; outline: none; -moz-appearance: textfield;
+}
+.stepper input::-webkit-outer-spin-button,
+.stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* Booking confirmed card */
+.confirmed-header {
+  background: linear-gradient(135deg, var(--accent) 0%, #f59e0b 100%);
+  border-radius: calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  padding: 1.5rem; color: var(--ink);
+}
+.ref-pill {
+  display: inline-block;
+  background: rgba(0,0,0,.12); border-radius: 999px;
+  padding: .3rem .9rem; font-size: .8rem; font-weight: 800; letter-spacing: .06em;
+  margin-bottom: .8rem;
+}
+.booking-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .6rem;
+  padding: 1rem;
+}
+.booking-cell {
+  background: var(--raise); border: 1px solid var(--line);
+  border-radius: calc(var(--r) * .6); padding: .6rem .8rem;
+}
+.booking-cell .cell-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: .2rem; }
+.booking-cell .cell-value { font-weight: 700; font-size: .9rem; }
+.booking-cell.full { grid-column: 1 / -1; }
+
+/* Wifi badge in confirmation */
+.wifi-badge {
+  margin: 0 1rem .6rem;
+  background: rgba(16,185,129,.12); border: 1px solid rgba(52,211,153,.35);
+  border-radius: calc(var(--r) * .6); padding: .75rem 1rem;
+  display: flex; align-items: center; gap: .75rem;
+}
+.wifi-badge .wnet { font-weight: 700; }
+.wifi-badge .wcode {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 1rem; font-weight: 800; letter-spacing: .08em;
+  color: var(--accent-text);
+}
+
+/* Slide-in animation for confirmation */
+@keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+.slide-up { animation: slideUp .4s ease-out; }
+
+/* Price change pulse */
+@keyframes pricePulse { 0%,100% { opacity:1; } 50% { opacity:.5; } }
+.price-updating { animation: pricePulse .3s ease; }
+
+/* Date input custom styling */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(.4);
+}
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none; opacity(.5);
+}
+
+/* PDF preview hidden element */
+#pdfQr { display: none; }
+</style>
 </head>
 <body class="min-h-screen antialiased">
 
@@ -32,6 +166,9 @@
 
 <main id="app" class="max-w-6xl mx-auto px-4 sm:px-6 pb-20"></main>
 
+<!-- Hidden QR canvas for PDF generation -->
+<div id="pdfQr"></div>
+
 <script src="data.js"></script>
 <script src="api.js"></script>
 <script>
@@ -45,28 +182,85 @@ const u = items.find(x => x.id === id);
 const app = $('#app');
 $('#bName').textContent = d.name; $('#logoTxt').textContent = d.mono; $('#back').href = 'index.html';
 
+/* ── Extra amenity pricing ──────────────────────────────── */
+const EXTRA_PRICES = {
+  'External monitor': 50,
+  'Locker': 25,
+  'Quiet zone': 0,
+  'Extra power strip': 20,
+  'Key access': 0,
+  'Dedicated network': 75,
+  'Video call kit': 60,
+  'Whiteboard': 30,
+  'Visitor check-in': 0,
+  'Refreshments tray': 80,
+  'AV and PA': 200,
+  'Catering': 150,
+  'Projector': 90,
+};
+
+function getExtraPrice(label) { return EXTRA_PRICES[label] || 0; }
+
 function badge(u) {
   return u.mine ? `<span class="badge badge-sel">${ic('check')}Yours</span>`
     : u.free ? `<span class="badge badge-free">${ic('check')}Free to book</span>`
     : `<span class="badge badge-occ">${ic('lock')}Taken</span>`;
 }
+
+/* Build option HTML — extras get a price badge */
 const opts = (name, list, type, checked) => list.map((o, i) => {
   const [icon, label] = Array.isArray(o) ? o : [null, o];
-  return `<label class="opt"><input type="${type}" name="${name}" value="${esc(label)}" ${checked && i === 0 ? 'checked' : ''}><span>${icon ? ic(icon) : ''}${esc(label)}</span></label>`;
+  const extraCost = (type === 'checkbox') ? getExtraPrice(label) : 0;
+  const costBadge = (type === 'checkbox' && extraCost > 0)
+    ? `<span class="extra-cost">+AED ${extraCost}</span>` : '';
+  return `<label class="opt"><input type="${type}" name="${name}" value="${esc(label)}" ${checked && i === 0 ? 'checked' : ''}><span>${icon ? ic(icon) : ''}${esc(label)}${costBadge}</span></label>`;
 }).join('');
 
-/* Price after any active promo code is applied. Returns {base, pct, final, text} */
-function priceFor(kind, promoCode) {
+/* Price after any active promo code is applied. Returns {base, pct, final, text, extrasTotal} */
+function priceFor(kind, promoCode, extrasList) {
   const p = PRICE[kind], promo = activePromo();
   const applied = promo && promoCode && promoCode.trim().toUpperCase() === promo.code;
   const pct = applied ? promo.pct : 0;
-  const final = Math.round(p.amt * (1 - pct / 100));
-  return { base: p.amt, per: p.per, pct, final, applied };
+  const base = Math.round(p.amt * (1 - pct / 100));
+  const extrasTotal = (extrasList || []).reduce((sum, lbl) => sum + getExtraPrice(lbl), 0);
+  const final = base + extrasTotal;
+  return { base: p.amt, per: p.per, pct, discounted: base, extrasTotal, final, applied };
 }
+
 function priceHtml(kind, promoCode) {
-  const r = priceFor(kind, promoCode);
+  const r = priceFor(kind, promoCode, []);
   if (!r.applied) return `AED ${r.base}/${r.per}`;
-  return `<span style="text-decoration:line-through;opacity:.55">AED ${r.base}</span> AED ${r.final}/${r.per} <span class="accent font-bold">(-${r.pct}%)</span>`;
+  return `<span style="text-decoration:line-through;opacity:.55">AED ${r.base}</span> AED ${r.discounted}/${r.per} <span class="accent font-bold">(-${r.pct}%)</span>`;
+}
+
+/* Render the live price breakdown strip */
+function renderPriceSummary(kind, promoCode, extrasList) {
+  const r = priceFor(kind, promoCode, extrasList);
+  const hasExtras = r.extrasTotal > 0;
+  const hasDiscount = r.applied;
+  const el = $('#priceSummary');
+  if (!el) return;
+  el.classList.toggle('active-extras', hasExtras || hasDiscount);
+
+  let rows = '';
+  rows += `<div class="price-row"><span class="label">Base rate</span><span class="value">${r.applied ? `<span style="text-decoration:line-through;opacity:.5">AED ${r.base}</span> AED ${r.discounted}` : `AED ${r.base}`}/${r.per}</span></div>`;
+  if (r.applied) rows += `<div class="price-row" style="color:var(--accent-text)"><span class="label">Promo (${r.pct}% off)</span><span class="value accent font-bold">−AED ${r.base - r.discounted}</span></div>`;
+  if (hasExtras) {
+    extrasList.forEach(lbl => {
+      const ep = getExtraPrice(lbl);
+      if (ep > 0) rows += `<div class="price-row"><span class="label">${lbl}</span><span class="value">+AED ${ep}</span></div>`;
+    });
+  }
+  rows += `<div class="price-total-row"><span class="label">Total</span><span class="value">AED ${r.final}/${r.per}</span></div>`;
+  el.innerHTML = rows;
+
+  /* pulse the total on change */
+  const totalEl = el.querySelector('.price-total-row .value');
+  if (totalEl) { totalEl.classList.remove('price-updating'); void totalEl.offsetWidth; totalEl.classList.add('price-updating'); }
+}
+
+function getCheckedExtras() {
+  return [...document.querySelectorAll('[name="extras"]:checked')].map(x => x.value);
 }
 
 function render() {
@@ -97,61 +291,194 @@ function render() {
   let right;
   if (u.mine) {
     const b = bk[u.id];
-    right = `<div class="card p-6"><span class="badge badge-sel">${ic('check')}Your booking</span><h2 class="fh text-3xl mt-3">${u.label} is yours</h2>${summary(b)}
-      <button id="dlPdf" class="btn block w-full py-3 mt-3" type="button">Download confirmation (PDF)</button>
-      <div class="flex gap-2 mt-3"><a class="btn flex-1 py-3 text-center" style="text-decoration:none" href="index.html">Back to floor plan</a><button id="cancel" class="raise flex-1 py-3 font-semibold">Cancel booking</button></div></div>`;
+    right = buildConfirmedCard(b);
   } else if (!u.free) {
     right = `<div class="card p-6"><span class="badge badge-occ">${ic('lock')}Taken</span><h2 class="fh text-3xl mt-3">Not available</h2><p class="muted mt-2">${u.label} is already booked. Pick a free space on the plan, or use one of the links on this page.</p><a class="btn inline-block px-5 py-3 mt-5" style="text-decoration:none" href="index.html">Back to floor plan</a></div>`;
   } else {
     const today = new Date().toISOString().slice(0, 10);
-    right = `<form id="form" class="card p-6 space-y-5" action="https://formspree.io/f/mgaognkb" method="POST" novalidate>
-      <div><h2 class="fh text-3xl">Book ${u.label}</h2><p class="text-sm muted">Choose your preferences. The team confirms details after you reserve.</p></div>
-      <div class="raise p-3 text-sm flex items-center justify-between"><span class="muted">Price</span><span id="priceVal" class="font-bold accent">${priceHtml(u.kind, '')}</span></div>
-      ${u.deal ? `<div class="raise p-3 text-sm"><span class="accent font-bold">Power Hour</span> · ${POWER.pct}% off this open desk right now. Demo offer, the team confirms the final rate.</div>` : ''}
-      <div><label class="block text-sm mb-1" for="date">Date</label><input id="date" name="date" type="date" min="${today}" value="${today}" class="field w-full px-3 py-2.5"/></div>
-      <fieldset><legend class="text-sm mb-2">Time slot</legend><div class="flex flex-wrap gap-2">${opts('slot', SLOTS, 'radio', true)}</div></fieldset>
-      <div><label class="block text-sm mb-1" for="people">Number of people</label><input id="people" type="number" min="1" max="${CAPACITY[u.kind] * 3}" value="1" class="field w-full px-3 py-2.5"/><p id="capWarn" class="text-xs mt-1 hidden" style="color:#f59e0b">${u.label} seats up to ${CAPACITY[u.kind]}. A bigger space is suggested below.</p><div id="capSuggest" class="flex flex-wrap gap-2 mt-2"></div></div>
-      <fieldset><legend class="text-sm mb-2">Drinks on arrival</legend><div class="flex flex-wrap gap-2">${opts('drinks', DRINKS.map(x => [x === 'None' ? 'x' : 'coffee', x]), 'radio', true)}</div></fieldset>
-      <fieldset><legend class="text-sm mb-2">${u.kind === 'room' || u.kind === 'event' ? 'Room layout' : 'Seating'}</legend><div class="flex flex-wrap gap-2">${opts('setup', P.setup, 'radio', true)}</div></fieldset>
-      <fieldset><legend class="text-sm mb-2">Extras</legend><div class="flex flex-wrap gap-2">${opts('extras', P.extras, 'checkbox', false)}</div></fieldset>
-      <div><label class="block text-sm mb-1" for="promo">Promo code (optional)</label><input id="promo" class="field w-full px-3 py-2.5" placeholder="Ask reception for the current code"/><p id="promoMsg" class="text-xs mt-1"></p></div>
-      <div><label class="block text-sm mb-1" for="notes">Anything else? (optional)</label><textarea id="notes" name="notes" rows="2" class="field w-full px-3 py-2.5" placeholder="For example: oat milk, near a window"></textarea></div>
-      <div class="grid sm:grid-cols-2 gap-3"><div><label class="block text-sm mb-1" for="fN">Full name</label><input id="fN" name="name" class="field w-full px-3 py-2.5" autocomplete="name"/></div><div><label class="block text-sm mb-1" for="fE">Email</label><input id="fE" name="email" type="email" class="field w-full px-3 py-2.5" autocomplete="email"/></div></div>
-      <input type="hidden" name="message"/>
-      <p id="err" class="text-sm err-text hidden" role="alert"></p>
-      <button type="submit" class="btn w-full py-3.5 text-base">Reserve ${u.label}</button>
-      <p class="text-xs muted text-center">No card needed for this demo — pay at reception, show your confirmation PDF.</p>
-    </form>`;
+    right = `<div class="card overflow-hidden" id="bookingCard">
+
+      <!-- Card header -->
+      <div style="padding:1.25rem 1.5rem; border-bottom:1px solid var(--line)">
+        <h2 class="fh text-2xl leading-tight">Reserve ${u.label}</h2>
+        <p class="text-sm muted mt-0.5">The team confirms details after you reserve.</p>
+      </div>
+
+      <form id="form" class="p-5 space-y-5" action="https://formspree.io/f/mgaognkb" method="POST" novalidate>
+
+        <!-- Date + Time slot -->
+        <div class="space-y-3">
+          <p class="form-section-label">When</p>
+          <div><label class="block text-sm mb-1.5" for="date">Date</label>
+            <input id="date" name="date" type="date" min="${today}" value="${today}" class="field w-full px-3 py-2.5"/>
+          </div>
+          <div>
+            <p class="text-sm mb-2">Time slot</p>
+            <div class="flex flex-wrap gap-2">${opts('slot', SLOTS, 'radio', true)}</div>
+          </div>
+        </div>
+
+        <!-- People stepper -->
+        <div>
+          <p class="form-section-label">Guests</p>
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <p class="text-sm font-semibold">Number of people</p>
+              <p class="text-xs muted">Up to ${CAPACITY[u.kind]} recommended</p>
+            </div>
+            <div class="stepper">
+              <button type="button" id="decPeople" aria-label="Decrease">−</button>
+              <input id="people" type="number" min="1" max="${CAPACITY[u.kind] * 3}" value="1" aria-label="Number of people"/>
+              <button type="button" id="incPeople" aria-label="Increase">+</button>
+            </div>
+          </div>
+          <p id="capWarn" class="text-xs mt-2 hidden" style="color:#f59e0b">${u.label} seats up to ${CAPACITY[u.kind]}. Consider a larger space.</p>
+          <div id="capSuggest" class="flex flex-wrap gap-2 mt-2"></div>
+        </div>
+
+        <!-- Drinks -->
+        <div>
+          <p class="form-section-label">On arrival</p>
+          <div class="flex flex-wrap gap-2">${opts('drinks', DRINKS.map(x => [x === 'None' ? 'x' : 'coffee', x]), 'radio', true)}</div>
+        </div>
+
+        <!-- Setup -->
+        <div>
+          <p class="form-section-label">${u.kind === 'room' || u.kind === 'event' ? 'Layout' : 'Seating'}</p>
+          <div class="flex flex-wrap gap-2">${opts('setup', P.setup, 'radio', true)}</div>
+        </div>
+
+        <!-- Extras with live pricing -->
+        <div>
+          <p class="form-section-label">Add-ons</p>
+          <div class="flex flex-wrap gap-2" id="extrasGroup">${opts('extras', P.extras, 'checkbox', false)}</div>
+        </div>
+
+        <!-- Live price summary -->
+        <div id="priceSummary"></div>
+
+        ${u.deal ? `<div class="raise p-3 text-sm"><span class="accent font-bold">Power Hour</span> · ${POWER.pct}% off this open desk right now. Demo offer, the team confirms the final rate.</div>` : ''}
+
+        <!-- Promo code -->
+        <div>
+          <label class="block text-sm mb-1.5" for="promo">Promo code <span class="muted font-normal">(optional)</span></label>
+          <input id="promo" class="field w-full px-3 py-2.5" placeholder="Ask reception for the current code"/>
+          <p id="promoMsg" class="text-xs mt-1"></p>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="block text-sm mb-1.5" for="notes">Anything else? <span class="muted font-normal">(optional)</span></label>
+          <textarea id="notes" name="notes" rows="2" class="field w-full px-3 py-2.5" placeholder="e.g. oat milk, near a window, standing desk"></textarea>
+        </div>
+
+        <!-- Name + Email -->
+        <div>
+          <p class="form-section-label">Your details</p>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div><label class="block text-sm mb-1.5" for="fN">Full name</label><input id="fN" name="name" class="field w-full px-3 py-2.5" autocomplete="name"/></div>
+            <div><label class="block text-sm mb-1.5" for="fE">Email</label><input id="fE" name="email" type="email" class="field w-full px-3 py-2.5" autocomplete="email"/></div>
+          </div>
+        </div>
+
+        <input type="hidden" name="message"/>
+        <p id="err" class="text-sm err-text hidden" role="alert"></p>
+        <button type="submit" class="btn w-full py-3.5 text-base">Reserve ${u.label}</button>
+        <p class="text-xs muted text-center">No card needed · pay at reception · show your confirmation PDF</p>
+      </form>
+    </div>`;
   }
+
   app.innerHTML = `<div class="grid lg:grid-cols-5 gap-6 items-start pt-2">${left}<div class="lg:col-span-2 lg:sticky lg:top-6" id="side">${right}</div></div>`;
 
+  /* Wire up interactions */
   const form = $('#form');
-  if (form) form.addEventListener('submit', onSubmit);
+  if (form) {
+    form.addEventListener('submit', onSubmit);
+
+    /* Live price updates */
+    const updatePrice = () => {
+      const promoVal = $('#promo') ? $('#promo').value.trim() : '';
+      renderPriceSummary(u.kind, promoVal, getCheckedExtras());
+    };
+    document.querySelectorAll('[name="extras"]').forEach(el => el.addEventListener('change', updatePrice));
+    const promoEl = $('#promo');
+    if (promoEl) {
+      promoEl.addEventListener('input', () => {
+        const m = $('#promoMsg'), val = promoEl.value.trim(), r = priceFor(u.kind, val, getCheckedExtras());
+        updatePrice();
+        if (!val) { m.textContent = ''; return; }
+        m.textContent = r.applied ? `Applied: ${r.pct}% off` : 'Code not recognized.';
+        m.style.color = r.applied ? 'var(--accent-text)' : '#ef4444';
+      });
+    }
+    updatePrice(); /* initial render */
+
+    /* Stepper */
+    const peopleEl = $('#people');
+    const dec = $('#decPeople'), inc = $('#incPeople');
+    if (dec) dec.addEventListener('click', () => { peopleEl.value = Math.max(1, +peopleEl.value - 1); peopleEl.dispatchEvent(new Event('input')); });
+    if (inc) inc.addEventListener('click', () => { peopleEl.value = +peopleEl.value + 1; peopleEl.dispatchEvent(new Event('input')); });
+    if (peopleEl) {
+      peopleEl.addEventListener('input', () => {
+        const n = +peopleEl.value || 1, over = n > CAPACITY[u.kind];
+        $('#capWarn').classList.toggle('hidden', !over);
+        const bigger = ['flex', 'priv', 'room', 'event'].filter(kind => CAPACITY[kind] >= n);
+        $('#capSuggest').innerHTML = over ? items.filter(x => x.free && bigger.includes(x.kind) && x.id !== u.id).slice(0, 6)
+          .map(x => `<a class="sib" href="space.html?id=${x.id}">${x.label} · up to ${CAPACITY[x.kind]}</a>`).join('') : '';
+      });
+    }
+  }
+
   const c = $('#cancel'); if (c) c.addEventListener('click', () => { removeBooking(brand, u.id); location.reload(); });
   const dl = $('#dlPdf'); if (dl) dl.addEventListener('click', () => downloadTicket(bk[u.id]));
-
-  const peopleEl = $('#people');
-  if (peopleEl) {
-    peopleEl.addEventListener('input', () => {
-      const n = +peopleEl.value || 1, over = n > CAPACITY[u.kind];
-      $('#capWarn').classList.toggle('hidden', !over);
-      const bigger = ['flex', 'priv', 'room', 'event'].filter(kind => CAPACITY[kind] >= n);
-      $('#capSuggest').innerHTML = over ? items.filter(x => x.free && bigger.includes(x.kind) && x.id !== u.id).slice(0, 6)
-        .map(x => `<a class="sib" href="space.html?id=${x.id}">${x.label} · up to ${CAPACITY[x.kind]}</a>`).join('') : '';
-    });
-  }
-  const promoEl = $('#promo');
-  if (promoEl) {
-    promoEl.addEventListener('input', () => {
-      const m = $('#promoMsg'), val = promoEl.value.trim(), r = priceFor(u.kind, val);
-      $('#priceVal').innerHTML = priceHtml(u.kind, val);
-      if (!val) { m.textContent = ''; return; }
-      m.textContent = r.applied ? `Applied: ${r.pct}% off` : 'Code not recognized.';
-      m.style.color = r.applied ? 'var(--accent)' : '#ef4444';
-    });
-  }
 }
 
+/* ── Confirmed booking card ─────────────────────────────── */
+function buildConfirmedCard(b) {
+  const rows = [
+    ['Date', b.date], ['Time', b.slot], ['Guests', String(b.people || 1)],
+    ['Setup', b.setup], ['Drinks', b.drinks],
+    ['Extras', b.extras && b.extras.length ? b.extras.join(', ') : 'None'],
+  ];
+  const cells = rows.map(([l, v]) =>
+    `<div class="booking-cell"><p class="cell-label">${l}</p><p class="cell-value">${esc(v || '—')}</p></div>`
+  ).join('');
+
+  const wifiBlock = b.wifi ? `
+    <div class="wifi-badge">
+      <span style="color:var(--accent-text)">${ic('wifi')}</span>
+      <div><p class="text-xs muted" style="margin-bottom:.15rem">Guest Wi-Fi</p><p class="wnet">${esc(b.wifi.net)}</p><p class="wcode">${esc(b.wifi.code)}</p></div>
+    </div>` : '';
+
+  return `<div class="card overflow-hidden slide-up">
+    <div class="confirmed-header">
+      <p class="ref-pill">${esc(b.ref)}</p>
+      <h2 class="fh text-3xl">${u.label} confirmed</h2>
+      <p class="text-sm mt-1" style="opacity:.75">Check in at reception on level ${d.floor}</p>
+    </div>
+    <div style="padding:.75rem 1rem .25rem">
+      <div class="booking-cell full" style="background:rgba(250,204,21,.08);border-color:rgba(250,204,21,.3)">
+        <p class="cell-label">Total charged</p>
+        <p class="cell-value" style="font-size:1.1rem;color:var(--accent-text)">${(b.priceText || '').replace(/<[^>]+>/g, '') || priceStr(u.kind)}</p>
+      </div>
+    </div>
+    <div class="booking-grid">${cells}</div>
+    ${wifiBlock}
+    <div style="padding:.5rem 1rem 1rem; display:flex; flex-direction:column; gap:.6rem">
+      <button id="dlPdf" class="btn w-full py-3" type="button" style="display:flex;align-items:center;justify-content:center;gap:.5rem">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download PDF confirmation
+      </button>
+      <div class="flex gap-2">
+        <a class="raise flex-1 py-2.5 font-semibold text-sm text-center" style="text-decoration:none;border-radius:calc(var(--r)*.6)" href="index.html">Back to floor plan</a>
+        <button id="cancel" class="raise flex-1 py-2.5 font-semibold text-sm" style="border-radius:calc(var(--r)*.6)">Cancel booking</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ── Summary row helper (kept for onSubmit) ─────────────── */
 function summary(b) {
   const rows = [['Reference', b.ref], ['Status', b.status || 'pending'], ['Name', b.name], ['Date', b.date], ['Time', b.slot], ['People', b.people || 1], ['Price', b.priceText || priceHtml(u.kind, '')], ['Drinks', b.drinks], ['Setup', b.setup], ['Extras', b.extras.length ? b.extras.join(', ') : 'None']];
   if (b.wifi) rows.push(['Guest Wi-Fi', b.wifi.net], ['Wi-Fi code', b.wifi.code]);
@@ -159,20 +486,171 @@ function summary(b) {
   return `<div class="raise p-4 mt-4 text-sm space-y-1.5">${rows.map(([a, v]) => `<div class="flex justify-between gap-4"><span class="muted">${a}</span><span class="font-semibold text-right">${a === 'Price' ? v : esc(v)}</span></div>`).join('')}</div>`;
 }
 
-function downloadTicket(b) {
+/* ── PDF generation ─────────────────────────────────────── */
+async function downloadTicket(b) {
   if (!b) return;
-  const { jsPDF } = window.jspdf, doc = new jsPDF();
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.text('Lumen Yard', 20, 25);
-  doc.setFontSize(12); doc.setFont('helvetica', 'normal'); doc.text('Booking confirmation', 20, 33);
-  doc.setLineWidth(0.5); doc.line(20, 38, 190, 38);
-  const rows = [['Reference', b.ref], ['Space', u.label], ['Status', b.status || 'pending'], ['Name', b.name], ['Email', b.email], ['Date', b.date], ['Time', b.slot], ['People', String(b.people || 1)], ['Price', (b.priceText || '').replace(/<[^>]+>/g, '') || priceHtml(u.kind, '').replace(/<[^>]+>/g, '')], ['Drinks', b.drinks], ['Setup', b.setup], ['Extras', b.extras.length ? b.extras.join(', ') : 'None']];
-  let y = 50;
-  rows.forEach(([k, v]) => { doc.setFont('helvetica', 'bold'); doc.text(String(k) + ':', 20, y); doc.setFont('helvetica', 'normal'); doc.text(String(v || '-'), 70, y); y += 8; });
-  if (b.wifi) { doc.setFont('helvetica', 'bold'); doc.text('Guest Wi-Fi:', 20, y); doc.setFont('helvetica', 'normal'); doc.text(`${b.wifi.net} / ${b.wifi.code}`, 70, y); y += 8; }
-  doc.setFontSize(10); doc.setTextColor(120); doc.text('Show this at reception on arrival. Concept prototype -- not a real transaction.', 20, y + 10);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = 210, margin = 20;
+
+  /* ── Brand header bar */
+  doc.setFillColor(250, 204, 21);    // accent yellow
+  doc.rect(0, 0, W, 42, 'F');
+
+  /* LY monogram circle */
+  doc.setFillColor(11, 19, 43);
+  doc.circle(margin + 7, 21, 7, 'F');
+  doc.setTextColor(250, 204, 21);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+  doc.text('LY', margin + 7, 24, { align: 'center' });
+
+  /* Brand name + tagline */
+  doc.setTextColor(11, 19, 43);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+  doc.text('Lumen Yard', margin + 18, 18);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  doc.setTextColor(70, 50, 0);
+  doc.text(d.addr, margin + 18, 25);
+  doc.text(d.hours, margin + 18, 31);
+
+  /* Status pill top-right */
+  const status = (b.status || 'pending').toUpperCase();
+  doc.setFillColor(11, 19, 43);
+  doc.roundedRect(W - margin - 32, 13, 32, 10, 3, 3, 'F');
+  doc.setTextColor(250, 204, 21);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+  doc.text(status, W - margin - 16, 20, { align: 'center' });
+
+  /* ── Reference + Space name section */
+  let y = 54;
+  doc.setTextColor(100, 116, 139);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+  doc.text('BOOKING REFERENCE', margin, y);
+  doc.text('SPACE', 110, y);
+
+  y += 6;
+  doc.setTextColor(11, 19, 43);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+  doc.text(b.ref, margin, y);
+
+  doc.setFontSize(14);
+  doc.text(u.label, 110, y);
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(80, 90, 110);
+  doc.text(d.kinds[u.kind][0] + ' · Level ' + d.floor, 110, y + 6);
+
+  /* Divider */
+  y += 14;
+  doc.setDrawColor(220, 225, 235); doc.setLineWidth(0.4);
+  doc.line(margin, y, W - margin, y);
+
+  /* ── Main booking details grid */
+  y += 10;
+  const cols = [margin, 110];
+  const detailRows = [
+    [['DATE', b.date], ['TIME SLOT', b.slot]],
+    [['GUEST NAME', b.name], ['EMAIL', b.email]],
+    [['GUESTS', String(b.people || 1)], ['DRINKS', b.drinks]],
+    [['SETUP / LAYOUT', b.setup], ['EXTRAS', b.extras && b.extras.length ? b.extras.join(', ') : 'None']],
+  ];
+
+  detailRows.forEach(pair => {
+    pair.forEach(([label, value], ci) => {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text(label, cols[ci], y);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+      doc.setTextColor(14, 24, 47);
+      const maxW = 70;
+      const lines = doc.splitTextToSize(String(value || '—'), maxW);
+      doc.text(lines[0], cols[ci], y + 5.5);
+    });
+    y += 16;
+  });
+
+  /* ── Price highlight box */
+  y += 2;
+  doc.setFillColor(14, 24, 47);
+  doc.roundedRect(margin, y, W - margin * 2, 18, 3, 3, 'F');
+  doc.setTextColor(100, 116, 139); doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+  doc.text('TOTAL', margin + 6, y + 7);
+  const cleanPrice = (b.priceText || '').replace(/<[^>]+>/g, '') || d.kinds[u.kind][1];
+  doc.setTextColor(250, 204, 21); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+  doc.text(cleanPrice, margin + 6, y + 14);
+
+  if (b.notes) {
+    doc.setTextColor(100, 116, 139); doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.text('NOTES', W - margin - 60, y + 7);
+    doc.setTextColor(14, 24, 47); doc.setFontSize(9);
+    const noteLines = doc.splitTextToSize(b.notes, 55);
+    doc.text(noteLines[0], W - margin - 60, y + 14);
+  }
+
+  /* ── Wi-Fi box */
+  if (b.wifi) {
+    y += 26;
+    doc.setFillColor(240, 253, 250);
+    doc.roundedRect(margin, y, W - margin * 2, 18, 3, 3, 'F');
+    doc.setDrawColor(167, 243, 208); doc.roundedRect(margin, y, W - margin * 2, 18, 3, 3, 'D');
+    doc.setTextColor(5, 150, 105); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+    doc.text('GUEST WI-FI', margin + 6, y + 7);
+    doc.setTextColor(14, 24, 47); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.text(b.wifi.net, margin + 6, y + 14);
+    doc.setTextColor(5, 150, 105); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+    doc.text(b.wifi.code, W / 2, y + 14, { align: 'center' });
+    doc.setTextColor(100, 116, 139); doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.text('ACCESS CODE', W / 2, y + 7, { align: 'center' });
+  }
+
+  /* ── QR code */
+  const qrData = `REF:${b.ref}|SPACE:${u.label}|DATE:${b.date}|NAME:${b.name}`;
+  const qrContainer = document.getElementById('pdfQr');
+  qrContainer.innerHTML = '';
+  try {
+    await new Promise((resolve) => {
+      new QRCode(qrContainer, {
+        text: qrData, width: 160, height: 160,
+        colorDark: '#0b132b', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+      setTimeout(resolve, 300);
+    });
+    const qrCanvas = qrContainer.querySelector('canvas');
+    if (qrCanvas) {
+      const qrImg = qrCanvas.toDataURL('image/png');
+      const qrSize = 32;
+      const qrX = W - margin - qrSize;
+      const qrY = b.wifi ? y + 26 : (b.wifi === undefined ? y + 26 : y + 4);
+      /* Place QR below the price/wifi section */
+      let qrPlacedY = 220;
+      doc.addImage(qrImg, 'PNG', qrX, qrPlacedY, qrSize, qrSize);
+      doc.setTextColor(150, 160, 180); doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+      doc.text('Scan to verify', qrX + qrSize / 2, qrPlacedY + qrSize + 4, { align: 'center' });
+
+      /* Instruction text beside QR */
+      doc.setTextColor(14, 24, 47); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+      doc.text('Show this at reception on arrival.', margin, qrPlacedY + 8);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(80, 90, 110);
+      doc.text('Level ' + d.floor + ' · Halo Tower · ' + d.hours, margin, qrPlacedY + 16);
+    }
+  } catch(e) {
+    /* QR failed gracefully */
+    let qrPlacedY = 220;
+    doc.setTextColor(14, 24, 47); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.text('Show this at reception on arrival.', margin, qrPlacedY + 8);
+  }
+
+  /* ── Footer */
+  doc.setFillColor(14, 24, 47);
+  doc.rect(0, 282, W, 15, 'F');
+  doc.setTextColor(100, 116, 139); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+  doc.text('Lumen Yard · Concept prototype — not a real transaction.', margin, 291);
+  doc.text('lumeny.ard', W - margin, 291, { align: 'right' });
+
   doc.save(`${b.ref}.pdf`);
 }
 
+/* ── Form submission ────────────────────────────────────── */
 async function onSubmit(e) {
   e.preventDefault();
   const f = e.target, v = n => (f.querySelector(`[name="${n}"]:checked`) || {}).value, err = $('#err');
@@ -180,61 +658,57 @@ async function onSubmit(e) {
   const name = $('#fN').value.trim(), email = $('#fE').value.trim();
   const people = Math.max(1, +$('#people').value || 1);
   const promoVal = $('#promo').value.trim();
-  const priceInfo = priceFor(u.kind, promoVal);
+  const extrasList = getCheckedExtras();
+  const priceInfo = priceFor(u.kind, promoVal, extrasList);
   if (!$('#date').value) return bad('Choose a date.');
   if (!name) return bad('Enter your full name.');
   if (!/^\S+@\S+\.\S+$/.test(email)) return bad('Enter a valid email address.');
+
+  const priceLine = `AED ${priceInfo.final}/${priceInfo.per}${priceInfo.extrasTotal > 0 ? ` (base AED ${priceInfo.discounted} + extras AED ${priceInfo.extrasTotal})` : ''}${priceInfo.applied ? ` (${priceInfo.pct}% promo applied)` : ''}`;
+
   const data = {
-    status: 'pending', ref: 'LY-' + Math.floor(1000 + Math.random() * 9000), name, email, date: $('#date').value,
-    slot: v('slot'), drinks: v('drinks'), setup: v('setup'), people, priceText: priceHtml(u.kind, promoVal),
-    notes: $('#notes').value.trim() + (promoVal ? ` | Promo entered: ${promoVal}${priceInfo.applied ? ` (-${priceInfo.pct}%, applied)` : ' (not recognized)'}` : '') + ` | People: ${people}`,
-    extras: [...f.querySelectorAll('[name="extras"]:checked')].map(x => x.value)
+    status: 'pending', ref: 'LY-' + Math.floor(1000 + Math.random() * 9000),
+    name, email, date: $('#date').value,
+    slot: v('slot'), drinks: v('drinks'), setup: v('setup'), people,
+    priceText: priceLine,
+    notes: $('#notes').value.trim() + (promoVal ? ` | Promo: ${promoVal}${priceInfo.applied ? ` (-${priceInfo.pct}%, applied)` : ' (not recognized)'}` : '') + ` | People: ${people}`,
+    extras: extrasList
   };
-  const sb = f.querySelector('[type="submit"]'); sb.disabled = true; sb.textContent = 'Saving...';
+
+  const sb = f.querySelector('[type="submit"]'); sb.disabled = true; sb.textContent = 'Saving…';
   try {
     const r = await API.createBooking({ space: u.id, name, email, date: data.date, slot: data.slot, drinks: data.drinks, setup: data.setup, extras: data.extras, notes: data.notes });
     Object.assign(data, { ref: r.ref, status: r.status, wifi: r.wifi });
-  } catch (err) {
-    if (!err.offline) { sb.disabled = false; sb.textContent = `Reserve ${u.label}`; return bad(err.message); }
-    data.wifi = guestWifi(d);   // no backend reachable: demo mode, saved in this browser only
+  } catch (err2) {
+    if (!err2.offline) { sb.disabled = false; sb.textContent = `Reserve ${u.label}`; return bad(err2.message); }
+    data.wifi = guestWifi(d);
   }
+
   f.elements.message.value = [
     `Booking request for ${u.label}`,
-    `Reference: ${data.ref}`,
-    `Name: ${data.name}`,
-    `Email: ${data.email}`,
-    `Date: ${data.date}`,
-    `Time: ${data.slot}`,
-    `People: ${data.people}`,
-    `Drinks: ${data.drinks}`,
-    `Setup: ${data.setup}`,
+    `Reference: ${data.ref}`, `Name: ${data.name}`, `Email: ${data.email}`,
+    `Date: ${data.date}`, `Time: ${data.slot}`, `People: ${data.people}`,
+    `Drinks: ${data.drinks}`, `Setup: ${data.setup}`,
     `Extras: ${data.extras.length ? data.extras.join(', ') : 'None'}`,
+    `Price: ${priceLine}`,
     `Guest Wi-Fi: ${data.wifi.net} / ${data.wifi.code}`,
     `Notes: ${data.notes || 'None'}`
   ].join('\n');
-  const submit = f.querySelector('[type="submit"]');
-  submit.disabled = true;
-  submit.textContent = 'Sending...';
+
+  sb.textContent = 'Sending…';
   try {
-    const response = await fetch(f.action, {
-      method: f.method,
-      body: new FormData(f),
-      headers: { Accept: 'application/json' }
-    });
+    const response = await fetch(f.action, { method: f.method, body: new FormData(f), headers: { Accept: 'application/json' } });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.errors?.map(error => error.message).join(', ') || 'The booking request could not be sent. Please try again.');
+    if (!response.ok) throw new Error(result.errors?.map(e => e.message).join(', ') || 'Could not send. Please try again.');
   } catch (error) {
-    submit.disabled = false;
-    submit.textContent = `Reserve ${u.label}`;
-    return bad(error.message || 'The booking request could not be sent. Please try again.');
+    sb.disabled = false; sb.textContent = `Reserve ${u.label}`;
+    return bad(error.message || 'Could not send. Please try again.');
   }
+
   saveBooking(brand, u.id, data);
-  $('#side').innerHTML = `<div class="card p-6 text-center"><div class="w-14 h-14 rounded-full btn mx-auto flex items-center justify-center mb-4"><svg class="ico" style="width:28px;height:28px;stroke-width:3" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
-    <h2 class="fh text-3xl">You're booked in</h2><p class="muted text-sm mt-2">Check in at reception on level ${d.floor}. A confirmation was sent to ${esc(email)}.</p>
-    <div class="text-left">${summary(data)}</div>
-    <button id="dlPdf" class="btn block w-full py-3 mt-3" type="button">Download confirmation (PDF)</button>
-    <a class="btn block py-3 mt-3" style="text-decoration:none" href="index.html">Back to floor plan</a></div>`;
+  $('#side').innerHTML = `<div class="slide-up">${buildConfirmedCard(data)}</div>`;
   $('#dlPdf').addEventListener('click', () => downloadTicket(data));
+  const cancelBtn = $('#cancel'); if (cancelBtn) cancelBtn.addEventListener('click', () => { removeBooking(brand, u.id); location.reload(); });
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
